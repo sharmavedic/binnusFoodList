@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Search UI Demo</title>
+  <title>Binnus Food List</title>
 
   <!-- Bootstrap CSS -->
   <link 
@@ -27,13 +27,42 @@
         user-select: none;
     }
     .filter-badge.active {
-        background-color: #0d6efd !important;
+        background-color: #a8e4f1 !important;
         color: white;
     }
     #categoryFilters {
       max-height: 150px;
       overflow-y: auto;
     }
+    @media (min-width: 768px) {
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+    }
+    @media (max-width: 768px) {
+      #keywordInput {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: white;
+      }
+    }
+    .filter-badge {
+      font-size: 0.95rem;
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+    }
+
+    @media (max-width: 768px) {
+      .filter-badge {
+        font-size: 1.05rem;
+        padding: 0.6rem 0.9rem;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -41,7 +70,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-dark bg-primary">
   <div class="container-fluid">
-    <span class="navbar-brand mb-0 h1">Search App</span>
+    <span class="navbar-brand mb-0 h1">Binnus Food List</span>
   </div>
 </nav>
 
@@ -51,7 +80,7 @@
     <!-- LEFT: Search Pane -->
     <div class="col-12 col-md-3 sidebar p-3">
         <h5 class="mb-2 d-md-block d-flex justify-content-between align-items-center">
-          Search (MOBILE)
+          Search
           <button class="btn btn-sm btn-outline-secondary d-md-none"
                   data-bs-toggle="collapse"
                   data-bs-target="#searchPanel">
