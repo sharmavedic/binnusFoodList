@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Search UI Demo</title>
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .sidebar {
+      min-height: 100vh;
+      background: #ffffff;
+      border-right: 1px solid #ddd;
+    }
+    .filter-badge {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .filter-badge.active {
+        background-color: #0d6efd !important;
+        color: white;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-primary">
+  <div class="container-fluid">
+    <span class="navbar-brand mb-0 h1">Search App</span>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+
+    <!-- LEFT: Search Pane -->
+    <div class="col-md-3 sidebar p-4">
+        <h5 class="mb-3">Search</h5>
+
+        <div class="mb-3">
+            <label class="form-label">Keyword</label>
+            <input id="keywordInput" type="text" class="form-control" placeholder="Type something..." />
+        </div>
+
+        <h6 class="mt-3">Categories</h6>
+            <div id="categoryFilters" class="d-flex flex-wrap gap-2"></div>
+
+    </div>
+
+    <!-- RIGHT: Results Pane -->
+    <div class="col-md-9 p-4">
+        <h4 class="mb-4">Results</h4>
+        <div id="resultsContainer"></div>
+      </div>
+      
+  </div>
+</div>
+
+<script>
+    const sheetURL = "https://docs.google.com/spreadsheets/d/11xvWNp1di2SxMJJL0LHtE7SvKes-Txq1tL7-Z10QjKE/gviz/tq?tqx=out:csv";
+    let allCategories = new Set();
+    let selectedCategories = new Set();
+    let allItems = [];
+    
+    // ---- CSV PARSER ----
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let value = "";
+      let insideQuotes = false;
+    
+      for (let char of text) {
+        if (char === '"') insideQuotes = !insideQuotes;
+        else if (char === "," && !insideQuotes) {
+          row.push(value);
+          value = "";
+        }
+        else if (char === "\n" && !insideQuotes) {
+          row.push(value);
+          rows.push(row);
+          row = [];
+          value = "";
+        }
+        else value += char;
+      }
+      row.push(value);
+      rows.push(row);
+      return rows;
+    }
+    
+    // ---- LOAD DATA ----
+    async function loadData() {
+      const res = await fetch(sheetURL);
+      const text = await res.text();
+    
+      const rows = parseCSV(text.trim());
+      const headers = rows.shift().map(h => h.trim());
+    
+      const container = document.getElementById("resultsContainer");
+      container.innerHTML = "";
+    
+      rows.forEach(row => {
+        const item = Object.fromEntries(headers.map((h, i) => [h, row[i]]));
+    
+        const categories = item.Category.split(",").map(c => c.trim().toLowerCase());
+        categories.forEach(c => allCategories.add(c));
+    
+        const card = document.createElement("div");
+        card.className = "card mb-3 shadow-sm result-item";
+        card.dataset.categories = categories.join(" ");
+        card.dataset.text = (item.Title + " " + item.Description).toLowerCase();
+    
+        const tagsHTML = categories.map(c =>
+          `<span class="badge bg-secondary me-1">${c}</span>`
+        ).join("");
+    
+        card.innerHTML = `
+          <div class="card-body">
+            <h5 class="card-title">${item.Title}</h5>
+            <p class="card-text">${item.Description}</p>
+            <div>${tagsHTML}</div>
+          </div>
+        `;
+    
+        container.appendChild(card);
+      });
+    
+      renderCategoryFilters();
+    }
+    
+    // ---- RENDER CATEGORY BADGES ----
+    function renderCategoryFilters() {
+      const container = document.getElementById("categoryFilters");
+      container.innerHTML = "";
+    
+      [...allCategories].sort().forEach(cat => {
+        const badge = document.createElement("span");
+        badge.className = "badge bg-light text-dark border filter-badge";
+        badge.innerText = cat;
+    
+        badge.onclick = () => {
+          if (selectedCategories.has(cat)) {
+            selectedCategories.delete(cat);
+            badge.classList.remove("active");
+          } else {
+            selectedCategories.add(cat);
+            badge.classList.add("active");
+          }
+          runSearch();
+        };
+    
+        container.appendChild(badge);
+      });
+    }
+    
+    // ---- FILTER LOGIC ----
+    function runSearch() {
+      const keyword = document.getElementById("keywordInput").value.toLowerCase();
+      const cards = document.querySelectorAll(".result-item");
+    
+      cards.forEach(card => {
+        const text = card.dataset.text;
+        const categories = card.dataset.categories.split(" ");
+    
+        const matchesKeyword = text.includes(keyword);
+    
+        // OR logic: match any selected category
+        const matchesCategory =
+          selectedCategories.size === 0 ||
+          [...selectedCategories].every(c => categories.includes(c));
+    
+        card.style.display = (matchesKeyword && matchesCategory) ? "block" : "none";
+      });
+    
+      filterCategoryBadges(keyword);
+    }
+    
+    // ---- FILTER CATEGORY BADGES BY SEARCH TEXT ----
+    function filterCategoryBadges(keyword) {
+      document.querySelectorAll(".filter-badge").forEach(badge => {
+        badge.style.display = badge.innerText.includes(keyword) ? "inline-block" : "none";
+      });
+    }
+    
+    // ---- EVENTS ----
+    document.getElementById("keywordInput").addEventListener("input", runSearch);
+    
+    // Load data
+    loadData();
+</script>
+    
+    
+
+</body>
+</html>
